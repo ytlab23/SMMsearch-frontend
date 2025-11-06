@@ -1,5 +1,5 @@
 ---
-import { getAPIPath, shuffleArray } from "../../js/utils";
+import { getAPIPath, getRandomElements, shuffleArray } from "../../js/utils";
 import PanelLayout from "../../layouts/PanelLayout.astro";
 interface serviceSchema {
     serviceColor: string;
@@ -15,13 +15,7 @@ export const prerender = true;
 export async function getStaticPaths() {
     const allServicesFetch: any = await fetch(getAPIPath() + "api/services.json");
     const allServiceRes: serviceSchema[] = await allServicesFetch.json();
-    //     {
-    // "cause": {
-    // "name": "ConnectTimeoutError",
-    // "code": "UND_ERR_CONNECT_TIMEOUT",
-    // "message": "Connect Timeout Error"
-    // }
-    // }
+
     return allServiceRes.map((service: any) => ({
         params: {
             slug: service.serviceTitle
@@ -36,91 +30,34 @@ export async function getStaticPaths() {
 const { service } = Astro.props;
 const { slug } = Astro.params;
 
-let SMMService_APIData: any[] = [];
-let allPanelAPIs: string[][] = [];
-let platformsServiceCount: any[] = [];
+let serviceName = service.serviceTitle;
 
-//Fetching All Panels
-const allPanelsFetch: any = await fetch(getAPIPath() + "api/panels.json");
-let allPanelRes = await allPanelsFetch.json();
-
-//Capturing Panel's APIUrl and APIKey
-allPanelRes = shuffleArray(allPanelRes);
-allPanelRes.slice(0,5).map((panel: any) =>
-    allPanelAPIs.push([
-        `${panel.panelAPILink}?key=${panel.panelAPIKey}&action=services`,
-        panel.panelTitle,
-        panel.panelWebsiteURL,
-        panel.panelSlug,
-    ]),
-);
-
-//Executing Every Panel's API to get services
-for (let i = 0; i < allPanelAPIs.length; i++) {
-    let panelServicesdata
-    try {
-        panelServicesdata = await fetch(allPanelAPIs[i][0], {method:'POST'}).then((Response) =>
-            Response.json(),
-        );
-    } catch (error) {
-        console.log(allPanelAPIs[i][0])
-    }
-
-    try {
-        if(panelServicesdata.length == 0){
-            panelServicesdata = await fetch(allPanelAPIs[i][0]).then((Response) =>
-                Response.json(),
-            );
-    }
-    } catch (error) {
-        console.log(allPanelAPIs[i][0])
-    }
-
-    SMMService_APIData.push([
-        panelServicesdata, 
-        allPanelAPIs[i][1], 
-        allPanelAPIs[i][2], 
-        allPanelAPIs[i][3]]);
-}
+//Fetching All Panels to count How many panels provides the relevant Service
+const allPanelRes = await fetch(getAPIPath() + "api/panels.json").then(Response => Response.json());
 
 //Counting Services and Collecting all Relevant Services
-let count = 0,
+let count = 0, panelCount = 0,
     relevantServices: any[] = [];
-for (let j = 0; j < SMMService_APIData.length; j++) {
-    for (let k = 0; k < SMMService_APIData[j][0].length; k++) {
-        if (
-            SMMService_APIData[j][0][k].name
-                .toString()
-                .toLowerCase()
-                .includes(service.serviceTitle.toString().toLowerCase())
-        ) {
-            count++;
-            var temp = {
-                serviceData: SMMService_APIData[j][0][k],
-                serviceTitle: SMMService_APIData[j][1],
-                serviceRefUrl: SMMService_APIData[j][2],
-                serviceSlug: SMMService_APIData[j][3],
-            };
-            relevantServices.push(temp);
+
+const allServicesResponse = await fetch("https://smmsearch-io-cron.vercel.app/api/panelServices/search_" + serviceName).then(Response => Response.json());
+
+count = allServicesResponse.servicesFoundCount;
+
+relevantServices = allServicesResponse.combinedArray;
+for (let i = 0; i < relevantServices.length; i++) {
+    for (let j = 0; j < allPanelRes.length; j++) {
+        if(relevantServices[i].panelSlug === allPanelRes[j].panelSlug){
+            relevantServices[i].PanelFeatureImage = allPanelRes[j].paneFeaturedImage.url;
         }
     }
 }
-relevantServices=shuffleArray(relevantServices);
-//Counting Panel that provides services
-let panelCount = 0;
-for (let j = 0; j < SMMService_APIData.length; j++) {
-    for (let k = 0; k < SMMService_APIData[j][0].length; k++) {
-        if (
-            SMMService_APIData[j][0][k].name
-                .toString()
-                .toLowerCase()
-                .includes(service.serviceTitle.toString().toLowerCase())
-        ) {
-            panelCount++;
-            break;
-        }
-    }
-}
+// Extract unique panel names
+const uniquePanelNames = new Set(relevantServices.map((obj) => obj.panelName));
+
+// Count the number of unique panel names
+panelCount = uniquePanelNames.size;
+
+relevantServices = getRandomElements(relevantServices, relevantServices.length);
 
 // console.log("Relevant Services are - " , relevantServices);
 
@@ -205,23 +142,23 @@ let servicePageListCount = allSiteFetch[0].platformServiceCount || 20;
                                     </span>
                                     <span
                                         class="offer_service line-clamp-1 my-3 w-[27.5%] text-left"
-                                        title={smm_service.serviceData.name}>
-                                        {smm_service.serviceData.name}
+                                        title={smm_service.serviceName}>
+                                        {smm_service.serviceName}
                                     </span>
                                     <span class="offer_Minorder line-clamp-1 my-3 w-[13.5%]">
-                                        {smm_service.serviceData.min}
+                                        {smm_service.serviceMin}
                                     </span>
                                     <span class="offer_Maxorder line-clamp-1 my-3 w-[13.5%]">
-                                        {smm_service.serviceData.max}
+                                        {smm_service.serviceMax}
                                     </span>
                                     <span class="offer_rate line-clamp-1 my-3 w-[13.5%]">
-                                        ${smm_service.serviceData.rate}
+                                        ${smm_service.serviceRate}
                                     </span>
                                     <span class="offer_panelTitle line-clamp-1 my-3 w-[13.5%]">
-                                        <a class="hover:underline hover:font-semibold" href={`/panels/` + smm_service.serviceSlug }>{smm_service.serviceTitle}</a>
+                                        <a class="hover:underline hover:font-semibold" href={`/panels/` + smm_service.panelSlug }>{smm_service.panelName}</a>
                                     </span>
                                     <span class="offer_rate line-clamp-1 my-3 w-[13.5%]">
-                                        <a class="hover:underline hover:font-semibold" href={smm_service.serviceRefUrl}>{smm_service.serviceTitle} <i class="fa-solid fa-up-right"></i></a>
+                                        <a class="hover:underline hover:font-semibold" href={smm_service.panelRefUrl}>{smm_service.panelName} <i class="fa-solid fa-up-right"></i></a>
                                     </span>
                                 </span>
                             ))

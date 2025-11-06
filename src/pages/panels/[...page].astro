@@ -58,31 +58,39 @@ page.data.map((panel) =>
     ),
 );
 
-//Executing Every Panel's API to get services
-let panelServicesdata;
+//console.log(allPanelAPIs);
+
+//Executing Every Panel's API to get services count
+let panelServicesdata=[];
 for (let i = 0; i < allPanelAPIs.length; i++) {
     var totalPrice = 0;
-    panelServicesdata = await fetch(allPanelAPIs[i], { method: "POST" }).then(
-        (Response) => Response.json(),
-    );
-    //Fallback to fetch with GET Request
-    if(panelServicesdata.length === 0){
-        panelServicesdata = await fetch(allPanelAPIs[i]).then(
-        (Response) => Response.json(),
-    );
+    try {
+        panelServicesdata = await fetch(allPanelAPIs[i]).then(Response => Response.json());
+    } catch (error) {
+        console.log(allPanelAPIs[i] + "- Could not Find Services with GET Method");
+        panelServicesdata = [];
+    }
+
+    try {
+        //Fallback to fetch with GET Request
+        if(panelServicesdata.length==0){
+            panelServicesdata = await fetch(allPanelAPIs[i], {method:'POST'}).then(Response => Response.json());
+        }
+    } catch (error) {
+        console.log(allPanelAPIs[i] + "- Could not Find Services with POST Method");
+        panelServicesdata = [];
     }
 
     for (let j = 0; j < panelServicesdata.length; j++) {
-        if (
-            Number(panelServicesdata[j].rate) < 850 &&
-            Number(panelServicesdata[j].rate) > 0.0001
-        )
+        if((Number(panelServicesdata[j].rate) < 850) && (Number(panelServicesdata[j].rate) > 0.0001))
             totalPrice += Number(panelServicesdata[j].rate);
     }
-    allPanelServiceCount.push([
-        panelServicesdata.length,
-        totalPrice / panelServicesdata.length,
-    ]);
+    let temp = [
+        (panelServicesdata.length > 0) ? panelServicesdata.length : 0, 
+        (isNaN(totalPrice/panelServicesdata.length) ? 0 : totalPrice/panelServicesdata.length)
+    ];
+
+    allPanelServiceCount.push(temp);
 }
 
 const {data, ...rest} = page;
@@ -122,7 +130,7 @@ const {data, ...rest} = page;
                         <SMM_panelCards2
                             rating={panel.rating}
                             avrg={Number(
-                                allPanelServiceCount[index][1].toFixed(2),
+                                allPanelServiceCount[index][1].toFixed(2)
                             )}
                             service={Number(allPanelServiceCount[index][0])}
                             websiteURL={panel.panelWebsiteURL}

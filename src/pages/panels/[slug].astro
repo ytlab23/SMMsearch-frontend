@@ -2,6 +2,7 @@
 import { getAPIPath, JSONConvertToHTML, makeWordsClickable, optimizeImageUrl, shuffleArray } from "../../js/utils";
 import PanelLayout from "../../layouts/PanelLayout.astro";
 import SMM_panelCards_related from "../../components/SMM_panelCards_related.astro"
+import { undefined } from "astro:schema";
 
 //import servicePlatformsData from "../../data/temp-services";
 const allServicesFetch = await fetch(getAPIPath() + "api/services.json");
@@ -35,22 +36,25 @@ var servicesResponse = [];
 var platformList: any = [];
 var platformListTitles: any = [];
 try {
-    const servicesFetch = await fetch(
-        `${panel.panelAPILink}?key=${panel.panelAPIKey}&action=services`, {method:'POST'},
-    );
-    servicesResponse = await servicesFetch.json();
-    
-    //Fallback to fetch with GET Request
-    if(servicesResponse.length==0){
-        const servicesFetch = await fetch(
-            `${panel.panelAPILink}?key=${panel.panelAPIKey}&action=services`
-        );
-        servicesResponse = await servicesFetch.json();
+    try {
+        servicesResponse = await fetch(`${panel.panelAPILink}?key=${panel.panelAPIKey}&action=services`).then(Response => Response.json());
+    } catch (error) {
+        console.log(`${panel.panelAPILink}?key=${panel.panelAPIKey}&action=services` + "- Could not Find Services with GET Method");
+        servicesResponse = [];
+    }
+
+    try {
+        //Fallback to fetch with GET Request
+        if(servicesResponse.length==0){
+            servicesResponse = await fetch(`${panel.panelAPILink}?key=${panel.panelAPIKey}&action=services`, {method:'POST'}).then(Response => Response.json());
+        }
+    } catch (error) {
+        console.log(`${panel.panelAPILink}?key=${panel.panelAPIKey}&action=services` + "- Could not Find Services with POST Method");
+        servicesResponse = [];
     }
     
-    
     let allServiceNames: string[] = [];
-    if(servicesResponse.length != 0) {
+    if(servicesResponse.length > 0 || servicesResponse.length != undefined) {
         
         servicesResponse.map((service: any) =>
             allServiceNames.push(service.name.toLowerCase()),
@@ -66,6 +70,7 @@ try {
         }
     }
 } catch (error) {
+    console.log(error);
     console.log("Could not Find Services and API URL is not correct.");
 }
 
@@ -142,33 +147,39 @@ randomPanelsList = shuffleArray(randomPanelsList);
                     <div class="content" set:html={makeWordsClickable(JSONConvertToHTML(panel.panelTextDescrition), platformListTitles)}></div>
 
                     <div class="aboutPanel flex justify-between items-center">
-                        <h2 class="text-3xl font-semibold">
-                            Total number of Services - {servicesResponse.length}
-                        </h2>
-                    </div>
-
-                    <h2 class="text-3xl font-semibold">
-                        {panel.panelTitle} provides services for these platforms:
-                    </h2>
-                    <div class="services-cloud flex flex-wrap gap-3 text-white">
                         {
-                            platformList.length != 0 &&
-                            platformList.map((service: any) => (
-                                <a
-                                    href={
-                                        "/services/" +
-                                        service.serviceTitle
-                                            .toLowerCase()
-                                            .replaceAll(" ", "-")
-                                    }
-                                    class="lg:px-4 px-2 capitalize lg:py-2 py-1 lg:text-base text-[15px] rounded-md cursor-pointer hover:brightness-75"
-                                    style={`background-color: ${service.serviceColor}`}
-                                >
-                                    {service.serviceTitle}
-                                </a>
-                            ))
+                            servicesResponse.length > 0 &&
+                            <h2 class="text-3xl font-semibold">
+                                Total number of Services - {servicesResponse.length}
+                            </h2>
                         }
                     </div>
+
+                    {
+                        servicesResponse.length > 0 &&
+                        <h2 class="text-3xl font-semibold">
+                            {panel.panelTitle} provides services for these platforms:
+                        </h2>
+                        <div class="services-cloud flex flex-wrap gap-3 text-white">
+                            {
+                                platformList.length != 0 &&
+                                platformList.map((service: any) => (
+                                    <a
+                                        href={
+                                            "/services/" +
+                                            service.serviceTitle
+                                                .toLowerCase()
+                                                .replaceAll(" ", "-")
+                                        }
+                                        class="lg:px-4 px-2 capitalize lg:py-2 py-1 lg:text-base text-[15px] rounded-md cursor-pointer hover:brightness-75"
+                                        style={`background-color: ${service.serviceColor}`}
+                                    >
+                                        {service.serviceTitle}
+                                    </a>
+                                ))
+                            }
+                        </div>
+                    }
                 </div>
                 <aside class="lg:w-2/6 w-full">
                     <!-- Payment Options -->
@@ -247,7 +258,7 @@ randomPanelsList = shuffleArray(randomPanelsList);
             </div>
 
             {
-                servicesResponse.length != undefined && (
+                (servicesResponse.length > 0 ) && (
                     <h2 class="text-3xl font-semibold">20 Latest Services by {panel.panelTitle}</h2>
                     <div class="services-table-holder shadow-2xl mt-5 lg:w-full w-[89vw] overflow-auto">
                         <div class="table-wrapper md:w-full w-[700px] ">

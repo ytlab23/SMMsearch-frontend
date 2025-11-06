@@ -14,7 +14,7 @@ const {title, servicesCount=0, imageLogoPath} = Astro.props;
         <h2 class="font-semibold hover:underline"><a href={"/services/"+ title.toLowerCase().replaceAll(" ", "-")}>{title}</a></h2>
         {
             servicesCount > 0 &&
-            <span class="block">{servicesCount}+ Services</span>
+            <span class="block">{servicesCount} Services</span>
         }
     </span>
 </article>
