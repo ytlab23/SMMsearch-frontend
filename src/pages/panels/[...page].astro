@@ -21,8 +21,7 @@ interface panelStructure {
 
 export async function getStaticPaths({ paginate }: { paginate: any }) {
     const allPanels = await fetch(getAPIPath() + "api/panels.json");
-
-    const responsePanels: panelStructure[] = await allPanels.json();
+    const responsePanels: panelStructure[] = allPanels.ok ? await allPanels.json() : [];
     // Generate pages from our array of astronauts, with 2 to a page
     return paginate(responsePanels.reverse(), { pageSize: 15 });
 }

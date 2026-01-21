@@ -13,7 +13,14 @@ interface Props {
 }
 
 //Fetching Site Settings
-const allSiteFetch:any = await fetch(getAPIPath() + "api/siteData.json").then(Response => Response.json());
+const siteDataRes = await fetch(getAPIPath() + "api/siteData.json");
+const allSiteFetch: any = siteDataRes.ok ? await siteDataRes.json() : [{
+    SiteTitle: "SMM Search",
+    siteMetaDescription: "",
+    siteFavicon: { url: "/favicon.ico" },
+    siteLog: { url: "" },
+    homeBackgroundImage: { url: "" }
+}];
 
 const {
     title, 

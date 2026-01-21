@@ -13,8 +13,8 @@ interface serviceSchema {
 
 export const prerender = true;
 export async function getStaticPaths() {
-    const allServicesFetch: any = await fetch(getAPIPath() + "api/services.json");
-    const allServiceRes: serviceSchema[] = await allServicesFetch.json();
+    const allServicesFetch = await fetch(getAPIPath() + "api/services.json");
+    const allServiceRes: serviceSchema[] = allServicesFetch.ok ? await allServicesFetch.json() : [];
 
     return allServiceRes.map((service: any) => ({
         params: {
@@ -33,17 +33,19 @@ const { slug } = Astro.params;
 let serviceName = service.serviceTitle;
 
 //Fetching All Panels to count How many panels provides the relevant Service
-const allPanelRes = await fetch(getAPIPath() + "api/panels.json").then(Response => Response.json());
+const panelsFetch = await fetch(getAPIPath() + "api/panels.json");
+const allPanelRes = panelsFetch.ok ? await panelsFetch.json() : [];
 
 //Counting Services and Collecting all Relevant Services
 let count = 0, panelCount = 0,
     relevantServices: any[] = [];
 
-const allServicesResponse = await fetch("https://smmsearch-io-cron.vercel.app/api/panelServices/search_" + serviceName).then(Response => Response.json());
+const servicesSearchFetch = await fetch("https://smmsearch.netlify.app/api/panelServices/search_" + serviceName);
+const allServicesResponse = servicesSearchFetch.ok ? await servicesSearchFetch.json() : { servicesFoundCount: 0, combinedArray: [] };
 
 count = allServicesResponse.servicesFoundCount;
 
-relevantServices = allServicesResponse.combinedArray;
+relevantServices = allServicesResponse.combinedArray || [];
 for (let i = 0; i < relevantServices.length; i++) {
     for (let j = 0; j < allPanelRes.length; j++) {
         if(relevantServices[i].panelSlug === allPanelRes[j].panelSlug){
@@ -62,7 +64,8 @@ relevantServices = getRandomElements(relevantServices, relevantServices.length);
 // console.log("Relevant Services are - " , relevantServices);
 
 //Fetching Site Settings
-const allSiteFetch:any = await fetch(getAPIPath() + "api/siteData.json").then(Response => Response.json());
+const siteDataFetch = await fetch(getAPIPath() + "api/siteData.json");
+const allSiteFetch: any = siteDataFetch.ok ? await siteDataFetch.json() : [{ platformServiceCount: 20, SiteTitle: "SMM Search" }];
 
 let servicePageListCount = allSiteFetch[0].platformServiceCount || 20;
 

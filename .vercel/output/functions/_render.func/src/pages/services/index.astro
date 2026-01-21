@@ -1,0 +1,67 @@
+---
+import PanelLayout from "../../layouts/PanelLayout.astro";
+import SMM_ServicesCards from "../../components/SMM_servicesCards.astro"
+import SearchForm from "../../components/SearchForm.astro";
+import { getAPIPath, optimizeImageUrl } from "../../js/utils";
+
+interface serviceSchema{
+    serviceColor: string,
+    serviceLogo: {
+        name: string,
+        mediaType: string,
+        url: string,
+    },
+    serviceTitle: string,
+}
+
+let SMMService_APIData : any[] = [];
+let allPanelAPIs : string[] = [];
+let platformsServiceCount : any[] = [];
+
+//Fetching All Services
+const allServicesFetch:any = await fetch(getAPIPath() + "api/services.json");
+const allServiceRes : serviceSchema[] = await allServicesFetch.json();
+
+//Fetching Already Saved Services
+
+for (let i = 0, counter=0; i < allServiceRes.length; i++, counter++) {
+    let count = 0;
+    // console.log(allServiceRes[i].serviceTitle.toString().toLowerCase());
+    
+    /* const allPanelServicesFetch: any = await fetch(`https://smmsearch-io-cron.vercel.app/api/panelServices/searchCount_${allServiceRes[i].serviceTitle.toString().toLowerCase()}`).then(
+        (Response) => Response.json(),
+    );
+    count = allPanelServicesFetch.servicesFoundCount; */
+    // console.log("Searching for - ", allServiceRes[i].serviceTitle.toString().toLowerCase());
+    
+    platformsServiceCount.push([allServiceRes[i].serviceTitle, 0]);
+}
+// console.log(platformsServiceCount);
+
+---
+
+<PanelLayout title="List of all Services" metaDescription="">
+    <h1 class="font-bold text-center text-2xl">Available Social Media Marketing Services</h1>
+    <div class="searchBox flex justify-center items-center">
+        <div class="wrapper w-1/2">
+            <SearchForm searchPagePath={"/services/search"}/>
+        </div>
+    </div>
+    <div class="content-wrapper flex flex-wrap lg:justify-start justify-center gap-5 my-6 px-5">
+        {
+            allServiceRes.map((service, index)=>(
+                <SMM_ServicesCards 
+                    servicesCount={platformsServiceCount[index][1]} 
+                    title={service.serviceTitle} 
+                    imageLogoPath={optimizeImageUrl(service.serviceLogo.url)}>
+                </SMM_ServicesCards>
+            ))
+        }
+    </div>
+</PanelLayout>
+
+<script is:inline src="/assets/scripts/main.js"></script>
+
+<script is:inline>
+    allowServiceCardClick(".content-wrapper")
+</script>

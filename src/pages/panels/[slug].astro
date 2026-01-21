@@ -5,13 +5,14 @@ import SMM_panelCards_related from "../../components/SMM_panelCards_related.astr
 
 //import servicePlatformsData from "../../data/temp-services";
 const allServicesFetch = await fetch(getAPIPath() + "api/services.json");
-const allServices = await allServicesFetch.json();
+const allServices = allServicesFetch.ok ? await allServicesFetch.json() : [];
 
-let randomPanelsList = await fetch(getAPIPath() + "api/panels.json").then(Response => Response.json());
+const randomPanelsRes = await fetch(getAPIPath() + "api/panels.json");
+let randomPanelsList = randomPanelsRes.ok ? await randomPanelsRes.json() : [];
 export const prerender = true;
 export async function getStaticPaths() {
-    const allPanelsFetch: any = await fetch(getAPIPath() + "api/panels.json");
-    const allPanelRes: panelSchema[] = await allPanelsFetch.json();
+    const allPanelsFetch = await fetch(getAPIPath() + "api/panels.json");
+    const allPanelRes: panelSchema[] = allPanelsFetch.ok ? await allPanelsFetch.json() : [];
     
     return allPanelRes.map((panel: any) => ({
         params: { slug: panel.panelSlug },

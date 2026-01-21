@@ -110,7 +110,7 @@ export function getRandomElements(arr :any[], count:number) {
 }
 
 export function getAPIPath() {
-    let siteIs = "https://smm-admin-panel.vercel.app/";
+    let siteIs = "https://smmsearch-admin.vercel.app/";
     // let siteIs = "http://localhost:4321/";
     return siteIs
 }
