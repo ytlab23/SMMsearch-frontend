@@ -54,11 +54,20 @@ try {
     }
     
     let allServiceNames: string[] = [];
-    if(servicesResponse.length > 0 || servicesResponse.length != undefined) {
-        
-        servicesResponse.map((service: any) =>
-            allServiceNames.push(service.name.toLowerCase()),
-        );
+    // Ensure servicesResponse is a valid array before processing
+    if (!Array.isArray(servicesResponse)) {
+        console.warn('Panel services response is not an array:', typeof servicesResponse);
+        servicesResponse = [];
+    }
+
+    if(servicesResponse.length > 0) {
+        servicesResponse.forEach((service: any) => {
+            // Safely handle service.name - could be null, undefined, or not a string
+            if (service && service.name != null) {
+                const nameStr = typeof service.name === 'string' ? service.name : String(service.name);
+                allServiceNames.push(nameStr.toLowerCase());
+            }
+        });
 
         for (let i = 0; i < allServices.length; i++) {
             for (let j = 0; j < allServiceNames.length; j++) {

@@ -1,8 +1,0 @@
----
-import { getAPIPath } from "../js/utils"
-
-const siteDataRes = await fetch(getAPIPath() + "api/siteData.json");
-const siteData = siteDataRes.ok ? await siteDataRes.json() : [{ adminPath: "/" }];
-
-return Astro.redirect(siteData[0].adminPath)
----
